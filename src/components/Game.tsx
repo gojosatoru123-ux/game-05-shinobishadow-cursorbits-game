@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GameEngine } from '../lib/gameEngine';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, ArrowLeft, ArrowRight, ArrowUp, Zap, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 
 export const Game: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,7 +139,7 @@ export const Game: React.FC = () => {
 
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (1280 / rect.width);
-    const y = (e.clientY - rect.top) * (720 / rect.height);
+    const y = 720 - (e.clientY - rect.top) * (720 / rect.height);
 
     if (engineRef.current.splashScreen) {
       engineRef.current.handleSplashClick(x, y);
@@ -164,6 +164,19 @@ export const Game: React.FC = () => {
     }
   };
 
+  const handleTouch = (index: number, value: number) => {
+    pressedRef.current[index] = value;
+  };
+
+  const togglePause = () => {
+    engineRef.current.paused = !engineRef.current.paused;
+    setIsPaused(engineRef.current.paused);
+  };
+
+  const toggleMute = () => {
+    setMuted(prev => !prev);
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -184,19 +197,84 @@ export const Game: React.FC = () => {
         onClick={handleClick}
         style={{ transform: 'rotateX(180deg)', cursor: 'pointer' }}
       />
+
+      {/* Mobile Controls Overlay */}
+      {isMobile && !engineRef.current.splashScreen && (
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 sm:p-8">
+          {/* Top Utility Buttons */}
+          <div className="flex justify-between items-start pointer-events-auto">
+            <div className="flex gap-3">
+              <button 
+                onPointerDown={togglePause}
+                className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md active:bg-white/30 transition-all border border-white/20"
+              >
+                {isPaused ? <Play className="text-white w-6 h-6" /> : <Pause className="text-white w-6 h-6" />}
+              </button>
+              <button 
+                onPointerDown={toggleMute}
+                className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md active:bg-white/30 transition-all border border-white/20"
+              >
+                {muted ? <VolumeX className="text-white w-6 h-6" /> : <Volume2 className="text-white w-6 h-6" />}
+              </button>
+              <button 
+                onPointerDown={toggleFullscreen}
+                className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md active:bg-white/30 transition-all border border-white/20"
+              >
+                {isFullscreen ? <Minimize2 className="text-white w-6 h-6" /> : <Maximize2 className="text-white w-6 h-6" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom Game Controls */}
+          <div className="flex justify-between items-end">
+            {/* Movement (Left Side) */}
+            <div className="flex gap-4 pointer-events-auto">
+              <button 
+                onPointerDown={() => handleTouch(0, 1)}
+                onPointerUp={() => handleTouch(0, 0)}
+                onPointerLeave={() => handleTouch(0, 0)}
+                className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center backdrop-blur-sm active:bg-white/20 transition-all border border-white/10 active:scale-95"
+              >
+                <ArrowLeft className="text-white w-10 h-10 opacity-70" />
+              </button>
+              <button 
+                onPointerDown={() => handleTouch(2, 1)}
+                onPointerUp={() => handleTouch(2, 0)}
+                onPointerLeave={() => handleTouch(2, 0)}
+                className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center backdrop-blur-sm active:bg-white/20 transition-all border border-white/10 active:scale-95"
+              >
+                <ArrowRight className="text-white w-10 h-10 opacity-70" />
+              </button>
+            </div>
+
+            {/* Actions (Right Side) */}
+            <div className="flex gap-4 pointer-events-auto items-end">
+              <button 
+                onPointerDown={() => handleTouch(3, 1)}
+                onPointerUp={() => handleTouch(3, 0)}
+                onPointerLeave={() => handleTouch(3, 0)}
+                className="w-20 h-20 bg-[#8b0000]/30 rounded-full flex items-center justify-center backdrop-blur-md active:bg-[#8b0000]/50 transition-all border-2 border-[#8b0000]/40 active:scale-90 shadow-[0_0_20px_rgba(139,0,0,0.3)]"
+              >
+                <Zap className="text-white w-10 h-10" />
+              </button>
+              <button 
+                onPointerDown={() => handleTouch(1, 1)}
+                onPointerUp={() => handleTouch(1, 0)}
+                onPointerLeave={() => handleTouch(1, 0)}
+                className="w-24 h-24 bg-[#a0c0ff]/10 rounded-full flex items-center justify-center backdrop-blur-md active:bg-[#a0c0ff]/30 transition-all border-2 border-[#a0c0ff]/20 active:scale-90 shadow-[0_0_25px_rgba(160,192,255,0.2)]"
+              >
+                <ArrowUp className="text-white w-12 h-12" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Instructions Overlay */}
-      <div className="absolute bottom-4 left-4 text-white/50 text-xs font-mono pointer-events-none flex flex-col gap-1">
-        <div>WASD / Arrows to Move • Shift/K to Dash • P to Pause • M to Mute</div>
-        <div>1-4 for Quality • Complete all 28 levels to restore honor</div>
-      </div>
-
-      {/* Mobile Start Overlay */}
-      {isMobile && engineRef.current.splashScreen && (
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center pointer-events-none">
-          <div className="bg-white/10 backdrop-blur-md px-8 py-4 rounded-full border border-white/20 animate-pulse text-white font-mono text-lg pointer-events-auto" onClick={(e) => handleClick(e as any)}>
-            TAP TO START
-          </div>
+      {!isMobile && (
+        <div className="absolute bottom-4 left-4 text-white/50 text-xs font-mono pointer-events-none flex flex-col gap-1">
+          <div>WASD / Arrows to Move • Shift/K to Dash • P to Pause • M to Mute</div>
+          <div>1-4 for Quality • Complete all 28 levels to restore honor</div>
         </div>
       )}
     </div>
